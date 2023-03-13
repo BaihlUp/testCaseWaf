@@ -24,8 +24,6 @@ import (
 
 	"testCaseWaf/internal/report"
 	"testCaseWaf/internal/version"
-
-	"testCaseWaf/internal/helpers"
 )
 
 func main() {
@@ -182,40 +180,6 @@ func run(ctx context.Context, logger *logrus.Logger) error {
 	err = db.ExportPayloads(payloadFiles)
 	if err != nil {
 		errors.Wrap(err, "payloads exporting")
-	}
-
-	if !cfg.NoEmailReport {
-		email := ""
-
-		if cfg.Email != "" {
-			email = cfg.Email
-		} else {
-			fmt.Print("Email to send the report (ENTER to skip): ")
-			fmt.Scanln(&email)
-
-			email = strings.TrimSpace(email)
-			if email == "" {
-				logger.Info("Skip report sending to email")
-
-				return nil
-			}
-
-			email, err = helpers.ValidateEmail(email)
-			if err != nil {
-				return errors.Wrap(err, "couldn't validate email")
-			}
-		}
-
-		err = report.SendReportByEmail(
-			ctx, stat, email,
-			reportTime, cfg.WAFName, cfg.URL, cfg.OpenAPIFile, args,
-			cfg.IgnoreUnresolved, includePayloads,
-		)
-		if err != nil {
-			return errors.Wrap(err, "couldn't send report by email")
-		}
-
-		logger.WithField("email", email).Info("The report has been sent to the specified email")
 	}
 
 	return nil
