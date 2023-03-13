@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"regexp"
 	"strings"
@@ -149,8 +148,8 @@ func (s *Scanner) Run(ctx context.Context) error {
 	var wg sync.WaitGroup
 	wg.Add(gn)
 
-	rand.Seed(time.Now().UnixNano())
-
+	// rand.Seed(time.Now().UnixNano())
+	s.logger.Infof("work: %d", gn)
 	s.logger.WithField("url", s.cfg.URL).Info("Scanning started")
 
 	start := time.Now()
@@ -274,6 +273,10 @@ func (s *Scanner) produceTests(ctx context.Context, n int) <-chan *testWork {
 	testChan := make(chan *testWork, n)
 	testCases := s.db.GetTestCases()
 
+	for i, v := range testCases {
+		s.logger.Infof("Test cases [%d]: %+v", i, *v)
+	}
+
 	go func() {
 		defer close(testChan)
 
@@ -313,7 +316,7 @@ func (s *Scanner) produceTests(ctx context.Context, n int) <-chan *testWork {
 							debugHeaderValue: debugHeaderValue,
 							Resp:             testCase.Resp,
 						}
-
+						s.logger.Infof("wrk: %+v", wrk)
 						select {
 						case testChan <- wrk:
 						case <-ctx.Done():
@@ -331,6 +334,7 @@ func (s *Scanner) produceTests(ctx context.Context, n int) <-chan *testWork {
 // scanURL scans the host with the given combination of payload, encoder and
 // placeholder.
 func (s *Scanner) scanURL(ctx context.Context, w *testWork) error {
+	s.logger.Info("exec %+v", *w)
 	var (
 		respHeaders   http.Header
 		respMsgHeader string
@@ -396,7 +400,7 @@ func (s *Scanner) scanURL(ctx context.Context, w *testWork) error {
 func (s *Scanner) checkCase(matchResp *db.Resp, respStatusCode int, respHeaders http.Header, respMsgHeader string, respBody string) bool {
 	res := true
 	if matchResp.Status != respStatusCode {
-		log.Println(fmt.Sprintf("\033[34m%s: got '%s', expected: '%s'\033[0m", "status", respStatusCode, matchResp.Status))
+		s.logger.Info(fmt.Sprintf("\033[34m%s: got '%d', expected: '%d'\033[0m", "status", respStatusCode, matchResp.Status))
 		res = false
 	}
 

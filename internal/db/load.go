@@ -15,7 +15,7 @@ import (
 )
 
 type matchKV struct {
-	Key      string `json:"key",omitempty`
+	Key      string `json:"key"`
 	Operator string `json:"operator"`
 	Val      string `json:"value"`
 }
