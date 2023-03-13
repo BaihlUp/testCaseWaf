@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/wallarm/gotestwaf/internal/db"
+	"testCaseWaf/internal/db"
 )
 
 //go:embed report_template.html

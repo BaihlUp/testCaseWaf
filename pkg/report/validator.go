@@ -6,8 +6,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
-	"github.com/wallarm/gotestwaf/internal/payload/encoder"
-	"github.com/wallarm/gotestwaf/internal/payload/placeholder"
+	"testCaseWaf/internal/payload/encoder"
+	"testCaseWaf/internal/payload/placeholder"
 )
 
 var (
