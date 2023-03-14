@@ -30,9 +30,9 @@
   resp:
     status: 403
     headers:
-      - key: 'X-IWAF-Reason'
+      - key: 'X-Iwaf-Reason'
         operator: 'contain'
-        value: '100000'
+        value: '200001'
     body:
       operator: 'regex'
       value: '403 Forbidden'

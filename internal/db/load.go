@@ -89,7 +89,7 @@ func LoadTestCases(cfg *config.Config) (testCases []*Case, err error) {
 			continue
 		}
 
-		fmt.Printf("	%s", testCaseFile)
+		fmt.Printf("	%s\n", testCaseFile)
 		// Ignore subdirectories, process as .../<testSetName>/<testCaseName>/<case>.yml
 		parts := strings.Split(testCaseFile, string(os.PathSeparator))
 		parts = parts[len(parts)-3:]
