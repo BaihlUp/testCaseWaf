@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -89,59 +88,6 @@ func New(
 	}, nil
 }
 
-// WAFBlockCheck checks if WAF exists and blocks malicious requests.
-func (s *Scanner) WAFBlockCheck(ctx context.Context) error {
-	if !s.cfg.SkipWAFBlockCheck {
-		s.logger.WithField("url", s.cfg.URL).Info("WAF pre-check")
-
-		ok, httpStatus, err := s.preCheck(ctx, preCheckVector)
-		if err != nil {
-			if s.cfg.BlockConnReset && (errors.Is(err, io.EOF) || errors.Is(err, syscall.ECONNRESET)) {
-				s.logger.Info("Connection reset, trying benign request to make sure that service is available")
-				blockedBenign, httpStatusBenign, errBenign := s.preCheck(ctx, "")
-				if !blockedBenign {
-					s.logger.Infof("Service is available (HTTP status: %d), WAF resets connections. Consider this behavior as block", httpStatusBenign)
-					ok = true
-				}
-				if errBenign != nil {
-					return errors.Wrap(errBenign, "running benign request pre-check")
-				}
-			} else {
-				return errors.Wrap(err, "running WAF pre-check")
-			}
-		}
-
-		if !ok {
-			return errors.Errorf("WAF was not detected. "+
-				"Please use the '--blockStatusCodes' or '--blockRegex' flags. Use '--help' for additional info. "+
-				"Baseline attack status code: %v", httpStatus)
-		}
-
-		s.logger.WithFields(logrus.Fields{
-			"status":  "done",
-			"blocked": true,
-			"code":    httpStatus,
-		}).Info("WAF pre-check")
-	} else {
-		s.logger.WithField("status", "skipped").Info("WAF pre-check")
-	}
-
-	return nil
-}
-
-// preCheck sends given payload during the pre-check stage.
-func (s *Scanner) preCheck(ctx context.Context, payload string) (blocked bool, statusCode int, err error) {
-	respMsgHeader, respBody, code, err := s.httpClient.SendPayload(ctx, s.cfg.URL, "URLParam", "URL", payload, "")
-	if err != nil {
-		return false, 0, err
-	}
-	blocked, err = s.checkBlocking(respMsgHeader, respBody, code)
-	if err != nil {
-		return false, 0, err
-	}
-	return blocked, code, nil
-}
-
 // Run starts a host scan to check WAF security.
 func (s *Scanner) Run(ctx context.Context) error {
 	gn := s.cfg.Workers
@@ -149,7 +95,6 @@ func (s *Scanner) Run(ctx context.Context) error {
 	wg.Add(gn)
 
 	// rand.Seed(time.Now().UnixNano())
-	s.logger.Infof("work: %d", gn)
 	s.logger.WithField("url", s.cfg.URL).Info("Scanning started")
 
 	start := time.Now()
@@ -194,7 +139,7 @@ func (s *Scanner) Run(ctx context.Context) error {
 					if !ok {
 						return
 					}
-					// time.Sleep(time.Duration(s.cfg.SendDelay+rand.Intn(s.cfg.RandomDelay)) * time.Millisecond)
+					time.Sleep(time.Duration(w.Delay) * time.Second)
 
 					if err := s.scanURL(ctx, w); err != nil {
 						s.logger.WithError(err).Error("Got an error while scanning")
@@ -273,10 +218,6 @@ func (s *Scanner) produceTests(ctx context.Context, n int) <-chan *testWork {
 	testChan := make(chan *testWork, n)
 	testCases := s.db.GetTestCases()
 
-	for i, v := range testCases {
-		s.logger.Infof("Test cases [%d]: %+v", i, *v)
-	}
-
 	go func() {
 		defer close(testChan)
 
@@ -316,7 +257,7 @@ func (s *Scanner) produceTests(ctx context.Context, n int) <-chan *testWork {
 							debugHeaderValue: debugHeaderValue,
 							Resp:             testCase.Resp,
 						}
-						s.logger.Infof("wrk: %+v", wrk)
+
 						select {
 						case testChan <- wrk:
 						case <-ctx.Done():
@@ -334,8 +275,10 @@ func (s *Scanner) produceTests(ctx context.Context, n int) <-chan *testWork {
 // scanURL scans the host with the given combination of payload, encoder and
 // placeholder.
 func (s *Scanner) scanURL(ctx context.Context, w *testWork) error {
-	s.logger.Info("exec %+v", *w)
+	fmt.Printf("exec %+v", w.Title)
+	defer fmt.Printf("\n")
 	var (
+		response      *http.Response
 		respHeaders   http.Header
 		respMsgHeader string
 		respBody      string
@@ -344,14 +287,14 @@ func (s *Scanner) scanURL(ctx context.Context, w *testWork) error {
 	)
 
 	if s.requestTemplates == nil {
-		respMsgHeader, respBody, statusCode, err = s.httpClient.SendPayload(ctx, s.cfg.URL, w.placeholder, w.encoder, w.payload, w.debugHeaderValue)
+		response, respMsgHeader, respBody, statusCode, err = s.httpClient.SendPayload(ctx, s.cfg.URL, w.placeholder, w.encoder, w.payload, w.debugHeaderValue)
 
-		if !s.checkCase(&w.Resp, statusCode, respHeaders, respMsgHeader, respBody) {
+		if !s.checkCase(&w.Resp, response, respBody) {
 			return nil
 		}
 
-		_, _, _, _, err = s.updateDB(ctx, w, nil, nil, nil, nil, nil,
-			statusCode, nil, respMsgHeader, respBody, err, "", false)
+		// _, _, _, _, err = s.updateDB(ctx, w, nil, nil, nil, nil, nil,
+		// 	statusCode, nil, respMsgHeader, respBody, err, "", false)
 
 		return err
 	}
@@ -377,10 +320,6 @@ func (s *Scanner) scanURL(ctx context.Context, w *testWork) error {
 
 		respHeaders, respMsgHeader, respBody, statusCode, err = s.httpClient.SendRequest(req, w.debugHeaderValue)
 
-		if !s.checkCase(&w.Resp, statusCode, respHeaders, respMsgHeader, respBody) {
-			return nil
-		}
-
 		additionalInfo = fmt.Sprintf("%s %s", template.Method, template.Path)
 
 		passedTest, blockedTest, unresolvedTest, failedTest, err =
@@ -397,23 +336,27 @@ func (s *Scanner) scanURL(ctx context.Context, w *testWork) error {
 	return nil
 }
 
-func (s *Scanner) checkCase(matchResp *db.Resp, respStatusCode int, respHeaders http.Header, respMsgHeader string, respBody string) bool {
+func (s *Scanner) checkCase(matchResp *db.Resp, resp *http.Response, respBody string) bool {
 	res := true
-	if matchResp.Status != respStatusCode {
-		s.logger.Info(fmt.Sprintf("\033[34m%s: got '%d', expected: '%d'\033[0m", "status", respStatusCode, matchResp.Status))
+	if matchResp.Status != resp.StatusCode {
+		fmt.Printf("\033[31m%s: got '%d', expected: '%d' [FAILED] \033[0m \n", "Status", resp.StatusCode, matchResp.Status)
 		res = false
 	}
 
 	for _, header := range matchResp.Headers {
-		if ok, msg := header.Match(respHeaders.Get(header.Key)); !ok {
-			log.Println(msg)
+		if ok, msg := header.Match(resp.Header.Get(header.Key)); !ok {
+			fmt.Println("CheckHeader: ", msg)
 			res = false
 		}
 	}
 
 	if ok, msg := matchResp.Body.Match(respBody); !ok {
-		log.Println(msg)
+		fmt.Println(msg)
 		res = false
+	}
+
+	if res {
+		fmt.Printf("\033[32m%s: got '%d', expected: '%d' [SUCCESSD] \033[0m \n", "Status", resp.StatusCode, matchResp.Status)
 	}
 	return res
 }

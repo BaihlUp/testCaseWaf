@@ -17,7 +17,7 @@ import (
 type matchKV struct {
 	Key      string `json:"key"`
 	Operator string `json:"operator"`
-	Val      string `json:"value"`
+	Value    string `json:"value"`
 }
 
 type Request struct {
@@ -38,24 +38,24 @@ type Case struct {
 	Delay          int     `yaml:"delay"`
 	Repeat         int     `yaml:"repeat"`
 	Req            Request `yaml:"req"`
-	Resp           Resp    `yaml:"Resp"`
+	Resp           Resp    `yaml:"resp"`
 	Set            string
 	Name           string
 	IsTruePositive bool
 }
 
-func (self *matchKV) Match(v string) (bool, string) {
-	msg := fmt.Sprintf("\033[34m%s: got '%s', expected: '%s'\033[0m", self.Key, v, self.Val)
+func (m matchKV) Match(v string) (bool, string) {
+	msg := fmt.Sprintf("\033[31m%s: got '%s', expected: '%s'\033[0m", m.Key, v, m.Value)
 
-	if (self.Val == "" || len(self.Val) == 0) && (self.Operator == "" || len(self.Operator) == 0) {
+	if (m.Value == "" || len(m.Value) == 0) && (m.Operator == "" || len(m.Operator) == 0) {
 		return true, msg
 	}
 
-	if self.Operator == "contain" {
-		return strings.Contains(v, self.Val), msg
+	if m.Operator == "contain" {
+		return strings.Contains(v, m.Value), msg
 
-	} else if self.Operator == "regex" {
-		rp, err := regexp.Compile(self.Val)
+	} else if m.Operator == "regex" {
+		rp, err := regexp.Compile(m.Value)
 		if err != nil {
 			log.Fatalln(err.Error())
 			return false, msg
@@ -64,7 +64,7 @@ func (self *matchKV) Match(v string) (bool, string) {
 		return rp.Match([]byte(v)), msg
 	}
 
-	return self.Val == v, msg
+	return m.Value == v, msg
 }
 
 func LoadTestCases(cfg *config.Config) (testCases []*Case, err error) {

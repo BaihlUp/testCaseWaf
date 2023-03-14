@@ -1,3 +1,3 @@
 package version
 
-var Version = "unknown"
+var Version = "WAFv1.0"
