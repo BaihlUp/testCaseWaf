@@ -81,13 +81,15 @@ func LoadTestCases(cfg *config.Config) (testCases []*Case, err error) {
 		return nil, err
 	}
 
+	fmt.Println("testCaseFile: [")
+	defer fmt.Println("]")
 	for _, testCaseFile := range files {
-		fmt.Printf("testCaseFile: %s", testCaseFile)
 		fileExt := filepath.Ext(testCaseFile)
 		if fileExt != ".yml" && fileExt != ".yaml" {
 			continue
 		}
 
+		fmt.Printf("	%s", testCaseFile)
 		// Ignore subdirectories, process as .../<testSetName>/<testCaseName>/<case>.yml
 		parts := strings.Split(testCaseFile, string(os.PathSeparator))
 		parts = parts[len(parts)-3:]

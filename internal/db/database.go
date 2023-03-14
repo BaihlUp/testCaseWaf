@@ -40,11 +40,11 @@ func NewDB(tests []*Case) (*DB, error) {
 	sha256hash := sha256.New()
 
 	for _, test := range tests {
-		if _, ok := db.counters[test.Set]; !ok {
-			db.counters[test.Set] = map[string]map[string]int{}
+		if _, ok := db.counters[test.SetName]; !ok {
+			db.counters[test.SetName] = map[string]map[string]int{}
 		}
-		if _, ok := db.counters[test.Set][test.Name]; !ok {
-			db.counters[test.Set][test.Name] = map[string]int{}
+		if _, ok := db.counters[test.SetName][test.CaseId]; !ok {
+			db.counters[test.SetName][test.CaseId] = map[string]int{}
 		}
 
 		db.NumberOfTests += uint(len(test.Req.Payloads) * len(test.Req.Encoders) * len(test.Req.Placeholders))
