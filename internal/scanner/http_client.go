@@ -220,7 +220,7 @@ func (c *HTTPClient) SendRequest(
 		c.client.Jar.SetCookies(req.URL, resp.Cookies())
 	}
 
-	return resp, string(msgHeader), string(bodyBytes), statusCode, nil
+	return resp.Header, string(msgHeader), string(bodyBytes), statusCode, nil
 }
 
 func (c *HTTPClient) getCookies(ctx context.Context, targetURL string) ([]*http.Cookie, error) {

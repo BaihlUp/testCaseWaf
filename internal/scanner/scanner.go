@@ -33,11 +33,11 @@ const (
 )
 
 type testWork struct {
-	Title            string
-	Delay            int
-	Repeat           int
-	setName          string
 	caseName         string
+	delay            int
+	repeat           int
+	setName          string
+	caseID           string
 	payload          string
 	encoder          string
 	placeholder      string
@@ -139,7 +139,7 @@ func (s *Scanner) Run(ctx context.Context) error {
 					if !ok {
 						return
 					}
-					time.Sleep(time.Duration(w.Delay) * time.Second)
+					time.Sleep(time.Duration(w.delay) * time.Second)
 
 					if err := s.scanURL(ctx, w); err != nil {
 						s.logger.WithError(err).Error("Got an error while scanning")
@@ -232,8 +232,8 @@ func (s *Scanner) produceTests(ctx context.Context, n int) <-chan *testWork {
 						if s.enableDebugHeader {
 							hash.Reset()
 
-							hash.Write([]byte(testCase.Set))
-							hash.Write([]byte(testCase.Name))
+							hash.Write([]byte(testCase.SetName))
+							hash.Write([]byte(testCase.CaseId))
 							hash.Write([]byte(placeholder))
 							hash.Write([]byte(encoder))
 							hash.Write([]byte(payload))
@@ -244,11 +244,11 @@ func (s *Scanner) produceTests(ctx context.Context, n int) <-chan *testWork {
 						}
 
 						wrk := &testWork{
-							Title:            testCase.Title,
-							Delay:            testCase.Delay,
-							Repeat:           testCase.Repeat,
-							setName:          testCase.Set,
 							caseName:         testCase.Title,
+							delay:            testCase.Delay,
+							repeat:           testCase.Repeat,
+							setName:          testCase.SetName,
+							caseID:           testCase.CaseId,
 							payload:          payload,
 							encoder:          encoder,
 							placeholder:      placeholder,
@@ -275,7 +275,7 @@ func (s *Scanner) produceTests(ctx context.Context, n int) <-chan *testWork {
 // scanURL scans the host with the given combination of payload, encoder and
 // placeholder.
 func (s *Scanner) scanURL(ctx context.Context, w *testWork) error {
-	fmt.Printf("exec %+v", w.Title)
+	fmt.Printf("exec caseName: [%s], caseId: [%s]", w.caseName, w.caseID)
 	defer fmt.Printf("\n")
 	var (
 		response      *http.Response
@@ -287,7 +287,7 @@ func (s *Scanner) scanURL(ctx context.Context, w *testWork) error {
 	)
 
 	if s.requestTemplates == nil {
-		response, respMsgHeader, respBody, statusCode, err = s.httpClient.SendPayload(ctx, s.cfg.URL, w.placeholder, w.encoder, w.payload, w.debugHeaderValue)
+		response, _, respBody, _, err = s.httpClient.SendPayload(ctx, s.cfg.URL, w.placeholder, w.encoder, w.payload, w.debugHeaderValue)
 
 		if !s.checkCase(&w.Resp, response, respBody) {
 			return nil

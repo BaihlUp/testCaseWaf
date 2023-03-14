@@ -33,14 +33,14 @@ type Resp struct {
 }
 
 type Case struct {
-	Title          string  `yaml:"title"`
+	Title          string  `yaml:"title"` //case name
 	Type           string  `default:"unknown" yaml:"type"`
 	Delay          int     `yaml:"delay"`
 	Repeat         int     `yaml:"repeat"`
 	Req            Request `yaml:"req"`
 	Resp           Resp    `yaml:"resp"`
-	Set            string
-	Name           string
+	SetName        string  // attack type
+	CaseId         string  // rule id
 	IsTruePositive bool
 }
 
@@ -82,6 +82,7 @@ func LoadTestCases(cfg *config.Config) (testCases []*Case, err error) {
 	}
 
 	for _, testCaseFile := range files {
+		fmt.Printf("testCaseFile: %s", testCaseFile)
 		fileExt := filepath.Ext(testCaseFile)
 		if fileExt != ".yml" && fileExt != ".yaml" {
 			continue
@@ -91,8 +92,8 @@ func LoadTestCases(cfg *config.Config) (testCases []*Case, err error) {
 		parts := strings.Split(testCaseFile, string(os.PathSeparator))
 		parts = parts[len(parts)-3:]
 
-		testSetName := parts[1] //按攻击类型划分测试集合
-		testCaseName := strings.TrimSuffix(parts[2], fileExt)
+		testSetName := parts[1]                               //按攻击类型划分测试集合
+		testCaseName := strings.TrimSuffix(parts[2], fileExt) //parts[2] 规则id
 
 		if cfg.TestSet != "" && testSetName != cfg.TestSet {
 			continue
@@ -113,8 +114,8 @@ func LoadTestCases(cfg *config.Config) (testCases []*Case, err error) {
 			return nil, err
 		}
 
-		t.Name = testCaseName
-		t.Set = testSetName
+		t.SetName = testSetName
+		t.CaseId = testCaseName
 
 		if strings.Contains(testSetName, "false") {
 			t.IsTruePositive = false // test case is false positive
