@@ -3,6 +3,7 @@ package scanner
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -143,13 +144,13 @@ func (c *HTTPClient) SendPayload(
 	}
 
 	resp, err := c.client.Do(req)
-	// fmt.Printf("req: %+v\n", *req)
-	// fmt.Printf("resp: %+v\n", *resp)
-
 	if err != nil {
 		return nil, "", "", 0, errors.Wrap(err, "sending http request")
 	}
 	defer resp.Body.Close()
+
+	msgReq, _ := httputil.DumpRequest(req, false)
+	fmt.Printf("send req: %s\n", msgReq)
 
 	msgHeader, err := httputil.DumpResponse(resp, false)
 	if err != nil {

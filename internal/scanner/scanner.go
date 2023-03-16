@@ -275,8 +275,9 @@ func (s *Scanner) produceTests(ctx context.Context, n int) <-chan *testWork {
 // scanURL scans the host with the given combination of payload, encoder and
 // placeholder.
 func (s *Scanner) scanURL(ctx context.Context, w *testWork) error {
+	fmt.Println("=========================================================")
 	fmt.Printf("exec DetectType: [%s], CaseName: [%s], CaseId: [%s]\n", w.setName, w.caseName, w.caseID)
-	defer fmt.Printf("\n")
+	defer fmt.Printf("=========================================================\n")
 	var (
 		response      *http.Response
 		respHeaders   http.Header
@@ -339,7 +340,7 @@ func (s *Scanner) scanURL(ctx context.Context, w *testWork) error {
 func (s *Scanner) checkCase(matchResp *db.Resp, resp *http.Response, respBody string) bool {
 	res := true
 	if matchResp.Status != resp.StatusCode {
-		fmt.Printf("\033[31m%s: got '%d', expected: '%d' [FAILED] \033[0m \n", "Status", resp.StatusCode, matchResp.Status)
+		fmt.Printf("%s: \033[31m got '%d', expected: '%d' [FAILED] \033[0m \n", "Status", resp.StatusCode, matchResp.Status)
 		res = false
 	}
 
