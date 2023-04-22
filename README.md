@@ -1,2 +1,2 @@
 # testCaseWaf
-test case tool for waf
+testCaseWaf is a tool for waf to test case.
