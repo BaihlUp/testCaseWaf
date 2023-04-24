@@ -1,0 +1,11 @@
+test/**
+tmp/**
+cmake-build-debug/**
+.idea/**
+.vscode/**
+objs/**
+./Makefile
+openresty/Makefile
+*.o
+*.a
+*.so
