@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"casecat/encoder"
+	"testCaseWaf/encoder"
 )
 
 type SOAPBody struct {

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"casecat/encoder"
-	"casecat/placeholder"
+	"testCaseWaf/encoder"
+	"testCaseWaf/placeholder"
 	"fmt"
 	"net/http"
 )
