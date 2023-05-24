@@ -10,7 +10,8 @@ import (
 
 type test struct {
 	Uri    interface{} `json:"uri"`
-	Header string      `json:"header"`
+	Method string      `json:"method"`
+	Header interface{} `json:"header"`
 	Body   string      `json:"body"`
 }
 
@@ -32,7 +33,7 @@ func ParseRule(rd string) {
 
 	for _, f := range files {
 		//获取文件路径
-		file := filepath.Join("./rules", f.Name())
+		file := filepath.Join(rd, f.Name())
 		if strings.HasSuffix(file, ".json") {
 			data, err := ioutil.ReadFile(file)
 			if err != nil {
@@ -61,7 +62,13 @@ func GenCase() error {
 		case []interface{}:
 			c.Req.Url = r.Test.Uri.([]interface{})[0].(string)
 		}
-		//c.Req.Headers = r.Test.Header
+		switch r.Test.Header.(type) {
+		case string:
+			c.Req.Headers = map[string]string{"test": r.Test.Header.(string)}
+		case map[string]string:
+			c.Req.Headers = r.Test.Header.(map[string]string)
+		}
+		c.Req.Method = r.Test.Method
 		c.Req.Body = r.Test.Body
 		c.Req.Host = "192.168.170.150:9090"
 

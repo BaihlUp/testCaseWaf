@@ -329,18 +329,14 @@ func caseExample() string {
 
 /*
 //
-// ./testCaseWaf  -addr=10.110.26.8:8000 -case=./conf/202303_testcase.json
-// ./testCaseWaf  -genCase=true -case=./conf/202303_testcase.json
+// ./testCaseWaf  -addr=192.168.170.150:9090 -case=./conf/202303_testcase.json
+// ./testCaseWaf  -genCase=true -ruledir=./secrules
 */
 func main() {
 	flag.Parse()
-	if len(*addr) == 0 {
-		if *testPlay == "help" {
-			fmt.Println("$ cat conf/case.json")
-			fmt.Println(caseExample())
-		} else {
-			log.Println("Error: Not Spec addr")
-		}
+	if len(*addr) == 0 && *testPlay == "help" {
+		fmt.Println("$ cat conf/case.json")
+		fmt.Println(caseExample())
 		return
 	}
 
@@ -353,6 +349,10 @@ func main() {
 				log.Println("GenCase err: ", err.Error())
 			}
 		} else {
+			if len(*addr) == 0 {
+				log.Println("Error: Not Spec addr")
+				return
+			}
 			casePlay()
 		}
 	}

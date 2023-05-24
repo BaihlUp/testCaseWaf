@@ -1,10 +1,10 @@
 package main
 
 import (
-	"testCaseWaf/encoder"
-	"testCaseWaf/placeholder"
 	"fmt"
 	"net/http"
+	"testCaseWaf/encoder"
+	"testCaseWaf/placeholder"
 )
 
 type request struct {
@@ -27,6 +27,7 @@ func (self *request) newRequest(addr string) (*http.Request, error) {
 		return nil, err
 	} else {
 		req.Host = self.Host
+		req.Method = self.Method
 
 		for k, v := range self.Headers {
 			req.Header.Add(k, v)
