@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	ver        = "1.00"
+	ver        = "2.00"
 	addr       = flag.String("addr", "", "Spec service listen addr. 'IP:port'")
 	vmHostAddr = flag.String("vmHostAddr", "127.0.0.1", "The proxy protol vm host addr. 'IP[:port]'")
 	cliAddr    = flag.String("cliAddr", "127.0.0.1", "The proxy protol client addr. 'IP'")
