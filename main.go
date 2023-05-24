@@ -29,6 +29,7 @@ var (
 	proxyAddr  = flag.String("proxyAddr", "", "The proxy model listen addr. '[IP]:port'")
 	ppEnable   = flag.Bool("PPEnable", false, "The proxy protocol enable. true or false")
 	genCase    = flag.Bool("genCase", false, "Generate test case. true or false")
+	ruledir    = flag.String("ruledir", "./rules", "sec rules dir path")
 )
 
 type matchKV struct {
@@ -228,7 +229,7 @@ func casePlay() {
 			fmt.Printf("\t%s\n", id)
 		}
 	}
-	//把失败的case写入文件
+
 	if len(failCase) > 0 {
 		data, _ := json.MarshalIndent(failCase, "", "    ")
 		ioutil.WriteFile("fail_case.json", data, 0644)
@@ -326,6 +327,11 @@ func caseExample() string {
 	return string(es)
 }
 
+/*
+//
+// ./testCaseWaf  -addr=10.110.26.8:8000 -case=./conf/202303_testcase.json
+// ./testCaseWaf  -genCase=true -case=./conf/202303_testcase.json
+*/
 func main() {
 	flag.Parse()
 	if len(*addr) == 0 {
@@ -342,7 +348,7 @@ func main() {
 		proxy()
 	} else {
 		if *genCase {
-			ParseRule()
+			ParseRule(*ruledir)
 			if err := GenCase(); err != nil {
 				log.Println("GenCase err: ", err.Error())
 			}

@@ -23,8 +23,8 @@ type Rule struct {
 
 var rule []Rule
 
-func ParseRule() {
-	files, err := ioutil.ReadDir("./rules")
+func ParseRule(rd string) {
+	files, err := ioutil.ReadDir(rd)
 	if err != nil {
 		log.Println("read dir err: ", err.Error())
 		return
